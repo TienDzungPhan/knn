@@ -29,8 +29,6 @@ def f1_score(real_labels, predicted_labels):
                 fn += 1
 
     return tp / (tp + 0.5*(fp + fn))
-    # assert len(real_labels) == len(predicted_labels)
-    # raise NotImplementedError
 
 
 class Distances:
@@ -54,7 +52,6 @@ class Distances:
         distance **= 1/3
 
         return distance
-        # raise NotImplementedError
 
     @staticmethod
     # TODO
@@ -72,7 +69,6 @@ class Distances:
         distance = np.sqrt(distance)
 
         return distance
-        # raise NotImplementedError
 
     @staticmethod
     # TODO
@@ -84,7 +80,7 @@ class Distances:
         """
         norm1, norm2 = np.linalg.norm(point1, 2), np.linalg.norm(point2, 2)
 
-        if norm1 == 0 | norm2 == 0:
+        if norm1 == 0 or norm2 == 0:
             return 1
         
         return 1 - (np.inner(point1, point2) / (norm1*norm2))
@@ -118,12 +114,32 @@ class HyperparameterTuner:
 		(this will also be the insertion order in "distance_funcs", to make things easier).
         For the same distance function, further break tie by prioritizing a smaller k.
         """
-        
+        best_score, best_k, best_distance_function, best_model = None, None, None, None
+
+        for distance_function in distance_funcs.keys():
+            for k in range(1, 30, 2):
+                model = KNN(k, distance_funcs[distance_function])
+                model.train(x_train, y_train)
+                predicted_labels = model.predict(x_val)
+                score = f1_score(y_val, predicted_labels)
+                # print(distance_function, k, score)
+                if best_score == None:
+                    best_score, best_k, best_distance_function, best_model = score, k, distance_function, model
+                    continue
+                if score < best_score:
+                    continue
+                if score == best_score:
+                    if list(distance_funcs.keys()).index(distance_function) > list(distance_funcs.keys()).index(best_distance_function):
+                        continue
+                    if list(distance_funcs.keys()).index(distance_function) == list(distance_funcs.keys()).index(best_distance_function):
+                        if k >= best_k:
+                            continue
+                best_score, best_k, best_distance_function, best_model = score, k, distance_function, model
+
         # You need to assign the final values to these variables
-        self.best_k = None
-        self.best_distance_function = None
-        self.best_model = None
-        raise NotImplementedError
+        self.best_k = best_k
+        self.best_distance_function = best_distance_function
+        self.best_model = best_model
 
     # TODO: find parameters with the best f1 score on validation dataset, with normalized data
     def tuning_with_scaling(self, distance_funcs, scaling_classes, x_train, y_train, x_val, y_val):
@@ -142,13 +158,36 @@ class HyperparameterTuner:
         NOTE: When there is a tie, choose the model based on the following priorities:
         First check scaler, prioritizing "min_max_scale" over "normalize" (which will also be the insertion order of scaling_classes). Then follow the same rule as in "tuning_without_scaling".
         """
-        
+        best_score, best_k, best_distance_function, best_scaler, best_model = None, None, None, None, None
+
+        for scaler in scaling_classes.keys():
+            for distance_function in distance_funcs.keys():
+                for k in range(1, 30, 2):
+                    model = KNN(k, distance_funcs[distance_function])
+                    scale_function = scaling_classes[scaler]()
+                    model.train(scale_function(x_train), y_train)
+                    predicted_labels = model.predict(scale_function(x_val))
+                    score = f1_score(y_val, predicted_labels)
+                    if best_score == None:
+                        best_score, best_k, best_distance_function, best_scaler, best_model = score, k, distance_function, scaler, model
+                        continue
+                    if score < best_score:
+                        continue
+                    if score == best_score:
+                        if list(scaling_classes.keys()).index(scaler) > list(scaling_classes.keys()).index(best_scaler):
+                            continue
+                        if list(scaling_classes.keys()).index(scaler) == list(scaling_classes.keys()).index(best_scaler):
+                            if list(distance_funcs.keys()).index(distance_function) > list(distance_funcs.keys()).index(best_distance_function):
+                                continue
+                            if list(distance_funcs.keys()).index(distance_function) == list(distance_funcs.keys()).index(best_distance_function):
+                                if k >= best_k:
+                                    continue
+                    best_score, best_k, best_distance_function, best_scaler, best_model = score, k, distance_function, scaler, model
         # You need to assign the final values to these variables
-        self.best_k = None
-        self.best_distance_function = None
-        self.best_scaler = None
-        self.best_model = None
-        raise NotImplementedError
+        self.best_k = best_k
+        self.best_distance_function = best_distance_function
+        self.best_scaler = best_scaler
+        self.best_model = best_model
 
 
 class NormalizationScaler:
@@ -174,10 +213,9 @@ class NormalizationScaler:
             if norm == 0:
                 scaled_features.append(point)
             else:
-                scaled_features.append((1 / norm)*point)
+                scaled_features.append([(point[i] / norm) for i in range(len(point))])
 
         return scaled_features
-
 
 class MinMaxScaler:
     def __init__(self):
@@ -205,7 +243,7 @@ class MinMaxScaler:
 
         for point in features:
             scaled_point = []
-            for i in range(point):
+            for i in range(len(point)):
                 if max_vals[i] == min_vals[i]:
                     scaled_point.append(0)
                 else:
