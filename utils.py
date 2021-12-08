@@ -167,7 +167,16 @@ class NormalizationScaler:
         :param features: List[List[float]]
         :return: List[List[float]]
         """
-        raise NotImplementedError
+        scaled_features = []
+
+        for point in features:
+            norm = np.linalg.norm(point, 2)
+            if norm == 0:
+                scaled_features.append(point)
+            else:
+                scaled_features.append((1 / norm)*point)
+
+        return scaled_features
 
 
 class MinMaxScaler:
@@ -190,4 +199,17 @@ class MinMaxScaler:
         :param features: List[List[float]]
         :return: List[List[float]]
         """
-        raise NotImplementedError
+        scaled_features = []
+        max_vals = [max(feature) for feature in np.transpose(features)]
+        min_vals = [min(feature) for feature in np.transpose(features)]
+
+        for point in features:
+            scaled_point = []
+            for i in range(point):
+                if max_vals[i] == min_vals[i]:
+                    scaled_point.append(0)
+                else:
+                    scaled_point.append((point[i] - min_vals[i]) / (max_vals[i] - min_vals[i]))
+            scaled_features.append(scaled_point)
+
+        return scaled_features
