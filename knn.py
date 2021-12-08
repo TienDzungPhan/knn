@@ -27,7 +27,7 @@ class KNN:
         :param features: List[List[float]]
         :param labels: List[int]
         """
-        raise NotImplementedError
+        self.trainings = [{ "features": features[i], "label": labels[i] } for i in range(len(features))]
 
     # TODO: find KNN of one point
     def get_k_neighbors(self, point):
@@ -38,7 +38,11 @@ class KNN:
         :param point: List[float]
         :return:  List[int]
         """
-        raise NotImplementedError
+        # Sort distances asc then get k-first neighbors -> Nlog(N)
+        neighbors = self.trainings
+        neighbors.sort(key = lambda neighbor : self.distance_function(point, neighbor["features"]))
+
+        return [neighbor["label"] for neighbor in neighbors[:self.k]]
 		
 	# TODO: predict labels of a list of points
     def predict(self, features):
@@ -51,8 +55,19 @@ class KNN:
         :param features: List[List[float]]
         :return: List[int]
         """
-        raise NotImplementedError	
+        predictions = []
+        
+        for test in features:
+            votes = {}
+            nn = self.get_k_neighbors(test)
+            for label in nn:
+                if label in votes.keys():
+                    votes[label] += 1
+                else:
+                    votes[label] = 1
+            predictions.append(max(votes, key = votes.get))
 
+        return predictions
 
 if __name__ == '__main__':
     print(np.__version__)

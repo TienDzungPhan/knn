@@ -84,17 +84,10 @@ class Distances:
         """
         norm1, norm2 = np.linalg.norm(point1, 2), np.linalg.norm(point2, 2)
 
-        # for i in range(len(point1)):
-        #     norm1 += point1[i]**2
-        #     norm2 += point2[i]**2
-            
-        # norm1, norm2 = np.sqrt(norm1), np.sqrt(norm2)
-
         if norm1 == 0 | norm2 == 0:
             return 1
         
         return 1 - (np.inner(point1, point2) / (norm1*norm2))
-        # raise NotImplementedError
 
 
 
