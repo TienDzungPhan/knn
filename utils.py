@@ -14,8 +14,23 @@ def f1_score(real_labels, predicted_labels):
     :param predicted_labels: List[int]
     :return: float
     """
-    assert len(real_labels) == len(predicted_labels)
-    raise NotImplementedError
+    tp, fp, fn = 0, 0, 0
+
+    for i in range(len(predicted_labels)):
+        # Positives predictions
+        if predicted_labels[i] == 1: 
+            if real_labels[i] == 1:
+                tp += 1
+            else:
+                fp += 1
+        # Negative predictions
+        else:
+            if real_labels[i] == 1:
+                fn += 1
+
+    return tp / (tp + 0.5*(fp + fn))
+    # assert len(real_labels) == len(predicted_labels)
+    # raise NotImplementedError
 
 
 class Distances:
@@ -31,7 +46,15 @@ class Distances:
         :param point2: List[float]
         :return: float
         """
-        raise NotImplementedError
+        distance = 0
+        
+        for i in range(len(point1)):
+            distance += np.abs(point1[i] - point2[i])**3
+
+        distance **= 1/3
+
+        return distance
+        # raise NotImplementedError
 
     @staticmethod
     # TODO
@@ -41,17 +64,37 @@ class Distances:
         :param point2: List[float]
         :return: float
         """
-        raise NotImplementedError
+        distance = 0
+        
+        for i in range(len(point1)):
+            distance += (point1[i] - point2[i])**2
+
+        distance = np.sqrt(distance)
+
+        return distance
+        # raise NotImplementedError
 
     @staticmethod
     # TODO
     def cosine_similarity_distance(point1, point2):
         """
-       :param point1: List[float]
-       :param point2: List[float]
-       :return: float
-       """
-        raise NotImplementedError
+        :param point1: List[float]
+        :param point2: List[float]
+        :return: float
+        """
+        norm1, norm2 = np.linalg.norm(point1, 2), np.linalg.norm(point2, 2)
+
+        # for i in range(len(point1)):
+        #     norm1 += point1[i]**2
+        #     norm2 += point2[i]**2
+            
+        # norm1, norm2 = np.sqrt(norm1), np.sqrt(norm2)
+
+        if norm1 == 0 | norm2 == 0:
+            return 1
+        
+        return 1 - (np.inner(point1, point2) / (norm1*norm2))
+        # raise NotImplementedError
 
 
 
